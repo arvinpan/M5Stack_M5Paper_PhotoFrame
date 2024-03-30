@@ -56,18 +56,31 @@ int offsetY = 0; // Screen space centering.
 File globalFileHandle;
 
 void * myOpen(const char *filename, int32_t *size) {
-  globalFileHandle = SD.open(filename);
+  Serial.print("[DEBUG] myOpen start: ");
+  Serial.println(filename);
+  String filenameWithPath = String("/") + filename;
+  globalFileHandle = SD.open(filenameWithPath);
   *size = globalFileHandle.size();
+  Serial.println("[DEBUG] myOpen end");
+  Serial.println(*size);
+  Serial.println(globalFileHandle);
   return &globalFileHandle;
 }
 void myClose(void *handle) {
+  Serial.println("[DEBUG] myClose called");
   if (globalFileHandle) globalFileHandle.close();
 }
 int32_t myRead(JPEGFILE *handle, uint8_t *buffer, int32_t length) {
+  Serial.print("[DEBUG] myRead start: ");
+  Serial.println(length);
   if (!globalFileHandle) return 0;
-  return globalFileHandle.read(buffer, length);
+  size_t bytesRead = globalFileHandle.read(buffer, length);
+  Serial.print("[DEBUG] myRead end: ");
+  Serial.println(bytesRead);
+  return bytesRead;
 }
 int32_t mySeek(JPEGFILE *handle, int32_t position) {
+  Serial.println("[DEBUG] mySeek called");
   if (!globalFileHandle) return 0;
   return globalFileHandle.seek(position);
 }
@@ -302,6 +315,12 @@ void setup() {
   M5.RTC.begin();
   canvas.createCanvas(960, 540);
   canvas.setTextSize(2);
+
+  // TODO: maybe not necessary, remove and retest
+  bool ret = SD.begin(4, SPI, 20000000);
+  if(ret == false)
+    canvas.drawString("SD ERROR...", 45, 100);
+
   loadNextImage();
   waitingTime = _WaitingTimeStart;
 }
